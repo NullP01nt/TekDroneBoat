@@ -6,34 +6,57 @@ import ImageFetcher
 import Conversion
 zoom=16
 
-
 class Drone:
     __handleRadius = 3
     __circle = None
 
+    #The static kinematics:
+    # __position        2D vector    
+    # __orientation     floating point value
+    # __velocity        floating point value
+    # __rotation        floating point value
+
+    #The steering kinematics:
+    # linear/acceleration   floating point value
+    # angular              floating point value
+
     def __init__(self, initialPosition, initialOrientation):
         self.__setPosition(initialPosition) 
         self.__orientation = initialOrientation 
-        print self  
-    
+        self.__velocity = 0.0
+        self.__rotation = 0.0
+
     def __str__(self):
-        return "drone: position="+str(self.__position)+" orientation="+str(self.__orientation)
+        return "drone: pos="+str(self.__position)+" ori="+str(self.__orientation)+" vel="+str(self.__velocity)+" rot="+str(self.__rotation)
 
     def __setPosition(self, newPosition):
         self.__position = newPosition
         if self.__circle is not None:
             self.__circle.center = newPosition
 
+
+
     #Drone drawing
     def setupDrawing(self, figure):
         centerX, centerY = self.__position[0],self.__position[1]
         self.__circle = plt.Circle((centerX,centerY), self.__handleRadius,fc=np.random.random(3),picker=True, alpha=0.5)
         figure.gca().add_patch(self.__circle)
-        
-    def move(self, newPosition, index):
+    
+    #move the drone by curser
+    def pickedUpAndMoved(self, newPosition, index):
         print "moving a Drone"
         if newPosition is not None:
             self.__setPosition(newPosition)
+
+    def kinematicsUpdate(self, linear, angular): 
+        #update position and orientation
+        self.__setPosition(self.__position +  self.__velocity * np.array([np.sin(self.__orientation), np.cos(self.__orientation)]))
+        self.__orientation += self.__rotation
+
+        #update steering: velocity and rotation 
+        self.__velocity += linear
+        self.__rotation += angular
+
 
 class Path:
     __handleRadius = 6
@@ -42,7 +65,7 @@ class Path:
     __controlPointsLines=None
     __curves=None
 
-    def move(self, position, index):
+    def pickedUpAndMoved(self, position, index):
         if index is not None:
              self.__setControlPoint(index, position)
 
@@ -141,11 +164,16 @@ def on_pick(event):
 def motion_notify_event(event):
     global figure
     if movable is not None:
-        movable.move(np.array([event.xdata, event.ydata]), index)
+        movable.pickedUpAndMoved(np.array([event.xdata, event.ydata]), index)
     figure.canvas.draw()
 
 def button_press_event(event):
-    pass
+    #random walker:
+    for i in range(0,500):
+        l = np.random.randn(2)
+        drone.kinematicsUpdate(l[0]*0.2,l[1]*0.1)
+        figure.canvas.draw()
+    print(drone)
 
 def button_release_event(event):
     global movable, index
