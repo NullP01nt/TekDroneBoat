@@ -149,11 +149,15 @@ path.setupDrawing(figure)
 drone = Drone(np.array([ 31, 165]), 0)
 drone.setupDrawing(figure)
 
+acceleration = 1
 def UpdateDrone():
+    global acceleration
     #random walker:
     l = np.random.randn(2)
-    drone.kinematicsUpdate(l[0]*0.2,l[1]*0.1)
+    angular = l[1]*0.06
+    drone.kinematicsUpdate(acceleration,angular)
     figure.canvas.draw()
+    acceleration = 0 #constant speed/no acceleration
 
 timer = figure.canvas.new_timer(interval=100)
 timer.add_callback(UpdateDrone)
