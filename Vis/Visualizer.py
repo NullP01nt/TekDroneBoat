@@ -8,7 +8,7 @@ zoom=16
 
 
 class Drone:
-    __handleRadius = 10
+    __handleRadius = 3
     __circle = None
 
     def __init__(self, initialPosition, initialOrientation):
@@ -118,7 +118,7 @@ figure.gca().set_aspect('equal')
 path = Path([np.array([ 84, 200]),
              np.array([ 67,  88]),
              np.array([165,  22]),
-                 np.array([230,  160])])
+             np.array([230, 160])])
 path.setupDrawing(figure)
 
 
