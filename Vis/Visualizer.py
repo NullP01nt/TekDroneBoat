@@ -149,6 +149,16 @@ path.setupDrawing(figure)
 drone = Drone(np.array([ 31, 165]), 0)
 drone.setupDrawing(figure)
 
+def UpdateDrone():
+    #random walker:
+    l = np.random.randn(2)
+    drone.kinematicsUpdate(l[0]*0.2,l[1]*0.1)
+    figure.canvas.draw()
+
+timer = figure.canvas.new_timer(interval=100)
+timer.add_callback(UpdateDrone)
+timer.start()
+
 #State for user picking logic 
 movable = None
 index = None #spline path controle point index
@@ -168,12 +178,7 @@ def motion_notify_event(event):
     figure.canvas.draw()
 
 def button_press_event(event):
-    #random walker:
-    for i in range(0,500):
-        l = np.random.randn(2)
-        drone.kinematicsUpdate(l[0]*0.2,l[1]*0.1)
-        figure.canvas.draw()
-    print(drone)
+    pass
 
 def button_release_event(event):
     global movable, index
@@ -193,6 +198,9 @@ figure.canvas.mpl_disconnect(figure.canvas.manager.key_press_handler_id)
 
 #Display the figures on screen
 plt.show(block=True)
+
+
+
 
 ################################################################################
 
