@@ -8,8 +8,9 @@ zoom=16
 
 class Drone:
     __handleRadius = 3
+    __lineLenght = 6
     __circle = None
-
+    __line = None
     #The static kinematics:
     # __position        2D vector    
     # __orientation     floating point value
@@ -33,14 +34,20 @@ class Drone:
         self.__position = newPosition
         if self.__circle is not None:
             self.__circle.center = newPosition
+            xList = [newPosition[0],newPosition[0]+np.cos(self.__orientation)*self.__lineLenght]
+            self.__line[0].set_xdata(xList)
+            yList = [newPosition[1],newPosition[1]+np.sin(self.__orientation)*self.__lineLenght]
+            self.__line[0].set_ydata(yList)
 
 
-
-    #Drone drawing
+    #Drawing drone
     def setupDrawing(self, figure):
         centerX, centerY = self.__position[0],self.__position[1]
         self.__circle = plt.Circle((centerX,centerY), self.__handleRadius,fc=np.random.random(3),picker=True, alpha=0.5)
         figure.gca().add_patch(self.__circle)
+        xList = [centerX,centerX+np.cos(self.__orientation)*self.__lineLenght]
+        yList = [centerY,centerY+np.sin(self.__orientation)*self.__lineLenght]
+        self.__line = figure.gca().plot(xList, yList)
     
     #move the drone by curser
     def pickedUpAndMoved(self, newPosition, index):
@@ -50,7 +57,7 @@ class Drone:
 
     def kinematicsUpdate(self, linear, angular): 
         #update position and orientation
-        self.__setPosition(self.__position +  self.__velocity * np.array([np.sin(self.__orientation), np.cos(self.__orientation)]))
+        self.__setPosition(self.__position +  self.__velocity * np.array([np.cos(self.__orientation), np.sin(self.__orientation)]))
         self.__orientation += self.__rotation
 
         #update steering: velocity and rotation 
@@ -153,8 +160,9 @@ acceleration = 1
 def UpdateDrone():
     global acceleration
     #random walker:
-    l = np.random.randn(2)
-    angular = l[1]*0.06
+    l = np.random.randn(1)
+    angular = l[0]*0.01
+    print angular 
     drone.kinematicsUpdate(acceleration,angular)
     figure.canvas.draw()
     acceleration = 0 #constant speed/no acceleration
