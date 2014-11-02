@@ -38,7 +38,9 @@ class Drone:
             self.__line[0].set_xdata(xList)
             yList = [newPosition[1],newPosition[1]+np.sin(self.__orientation)*self.__lineLenght]
             self.__line[0].set_ydata(yList)
-
+ 
+    def getPosition(self):
+        return self.__position
 
     #Drawing drone
     def setupDrawing(self, figure):
@@ -56,13 +58,14 @@ class Drone:
             self.__setPosition(newPosition)
 
     def kinematicsUpdate(self, linear, angular): 
+        print "kinematicsUpdate",linear, angular
         #update position and orientation
         self.__setPosition(self.__position +  self.__velocity * np.array([np.cos(self.__orientation), np.sin(self.__orientation)]))
         self.__orientation += self.__rotation
 
         #update steering: velocity and rotation 
         self.__velocity += linear
-        self.__rotation += angular
+        self.__rotation = angular
 
 
 class Path:
@@ -94,7 +97,7 @@ class Path:
 
         #connecting lines
         if self.__controlPointsLines is not None:
-            xy = self.getXYCoordinatList()
+            xy = self.__getXYCoordinatList()
             self.__controlPointsLines[0].set_xdata(xy[0])
             self.__controlPointsLines[0].set_ydata(xy[1])
 
@@ -105,7 +108,7 @@ class Path:
     def getControlPointsDict(self):
         return (self.__controlPoints)
 
-    def getXYCoordinatList(self):
+    def __getXYCoordinatList(self):
         xList = []
         yList = []
         for p in self.__controlPoints.values():
@@ -116,7 +119,7 @@ class Path:
     #Path drawing
     def setupDrawing(self, figure):
         #connecting lines
-        xy = self.getXYCoordinatList()
+        xy = self.__getXYCoordinatList()
         self.__controlPointsLines = figure.gca().plot(xy[0], xy[1])
 
         #Prepare for picking events
@@ -134,6 +137,70 @@ class Path:
         if(artist in self.__artistToControlPointIndex):
             controlIndex = self.__artistToControlPointIndex[artist]
             return(controlIndex)
+
+    #Control system aux
+    def calcSignedDistToPoint(self, point):
+        minDist = 2**31 #a big number
+        minDistLineStartPoint=None
+        for i in range(0,len(self.__controlPoints)-1):
+            a=self.__controlPoints[i]
+            b=self.__controlPoints[i+1]
+            dist = calculateDistance(a,b,point)
+            if dist <= minDist:
+                minDist = dist      
+                minDistLineStartPoint=a
+                minDistLineStartPointIndex = i
+        res = minDist*np.sign((b[0]-b[0])*(point[1]-a[1]) - (b[1]-a[1])*(point[0]-a[0]))
+        print "calcSignedDistToPoint", minDistLineStartPointIndex, minDistLineStartPoint, res
+        return res
+
+
+def calculateDistance(p1, p2, p3): # x3,y3 is the point
+    x1,y1 = p1[0], p1[1]
+    x2,y2 = p2[0], p2[1]
+    x3,y3 = p3[0], p3[1]
+
+    px = x2-x1
+    py = y2-y1
+
+    num = px*px + py*py
+    u =  ((x3 - x1) * px + (y3 - y1) * py) / float(num)
+    if u > 1:
+        u = 1
+    elif u < 0:
+        u = 0
+
+    x = x1 + u * px
+    y = y1 + u * py
+
+    dx = x - x3
+    dy = y - y3
+
+    # Note: If the actual distance does not matter,
+    # if you only want to compare what this function
+    # returns to other results of this function, you
+    # can just return the squared distance instead
+    # (i.e. remove the sqrt) to gain a little performance
+    return np.sqrt(dx*dx + dy*dy)
+
+import PID
+class Controller:
+    __ctl = PID.PID(P=0.001, I=1, D=0.001 )
+    __drone = None
+    __path = None
+
+    def __init__(self, drone, path):
+        self.__drone = drone
+        self.__path = path
+
+    def __call__(self):
+        if self.__drone is not None and self.__path is not None:
+            return self.__ctl.update(self.error())
+        else:
+            return 0
+
+    def error(self):
+        return self.__path.calcSignedDistToPoint(self.__drone.getPosition())
 
 ################################################################################
 
@@ -156,16 +223,19 @@ path.setupDrawing(figure)
 drone = Drone(np.array([ 31, 165]), 0)
 drone.setupDrawing(figure)
 
-acceleration = 1
+
+controller = Controller(drone, path)
+linear = 1
 def UpdateDrone():
-    global acceleration
-    #random walker:
-    l = np.random.randn(1)
-    angular = l[0]*0.01
-    print angular 
-    drone.kinematicsUpdate(acceleration,angular)
+    global linear
+    ctl = controller()
+    angular = min(max(ctl,-0.02*np.pi),0.02*np.pi)
+    
+    print "UpdateDrone", ctl, angular
+    drone.kinematicsUpdate(linear, angular)
     figure.canvas.draw()
-    acceleration = 0 #constant speed/no acceleration
+    linear = 0 #constant speed/no acceleration
+    print str(drone)+"\n"
 
 timer = figure.canvas.new_timer(interval=100)
 timer.add_callback(UpdateDrone)
