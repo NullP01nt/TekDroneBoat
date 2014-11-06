@@ -65,7 +65,7 @@ class Drone:
 
         #update steering: velocity and rotation 
         self.__velocity += linear
-        self.__rotation = angular
+        self.__rotation = np.max(np.min(angular, np.pi*0.01),-np.pi*0.01)
 
 
 class Path:
@@ -146,20 +146,21 @@ class Path:
             a=self.__controlPoints[i]
             b=self.__controlPoints[i+1]
             dist = calculateDistance(a,b,point)
+            print "dist=",dist
             if dist <= minDist:
                 minDist = dist      
                 minDistLineStartPoint=a
                 minDistLineStartPointIndex = i
         res = minDist*np.sign((b[0]-b[0])*(point[1]-a[1]) - (b[1]-a[1])*(point[0]-a[0]))
-        print "calcSignedDistToPoint", minDistLineStartPointIndex, minDistLineStartPoint, res
+        print "calcSignedDistToPoint", minDistLineStartPointIndex, minDistLineStartPoint, res, i, minDistLineStartPoint
         return res
 
 
 def calculateDistance(p1, p2, p3): # x3,y3 is the point
     x1,y1 = p1[0], p1[1]
     x2,y2 = p2[0], p2[1]
-    x3,y3 = p3[0], p3[1]
-
+    x0,y0 = p3[0], p3[1]
+    """
     px = x2-x1
     py = y2-y1
 
@@ -182,12 +183,18 @@ def calculateDistance(p1, p2, p3): # x3,y3 is the point
     # can just return the squared distance instead
     # (i.e. remove the sqrt) to gain a little performance
     return np.sqrt(dx*dx + dy*dy)
+    """
+    a = (y2-y1)/(x2-x1)
+    c = y1 - a*x1
+    return (-a*x0 + y0 + c)/np.sqrt((-a)**2 + 1)
 
+    
 import PID
 class Controller:
-    __ctl = PID.PID(P=0.001, I=1, D=0.001 )
+    __ctl = PID.PID(P=0.0001, I=0, D=0.0 )
     __drone = None
     __path = None
+    #oritance = distErr * const_0 
 
     def __init__(self, drone, path):
         self.__drone = drone
@@ -200,8 +207,9 @@ class Controller:
             return 0
 
     def error(self):
-        return self.__path.calcSignedDistToPoint(self.__drone.getPosition())
-
+        err = self.__path.calcSignedDistToPoint(self.__drone.getPosition())
+        print "err="+str(err)
+        return err  
 ################################################################################
 
 
@@ -225,11 +233,11 @@ drone.setupDrawing(figure)
 
 
 controller = Controller(drone, path)
-linear = 1
+linear = 0#1
 def UpdateDrone():
     global linear
     ctl = controller()
-    angular = min(max(ctl,-0.02*np.pi),0.02*np.pi)
+    angular = min(max(ctl,-0.02*np.pi), 0.02*np.pi)
     
     print "UpdateDrone", ctl, angular
     drone.kinematicsUpdate(linear, angular)
@@ -296,4 +304,4 @@ def printCoordinates(event):
         lat, lon=Conversion.MetersToLatLon( mx, my )
         print("Lat="+str(lat)+" lon="+str(lon) +"    "+ str(lat)+","+str(lon))
 
-
+#PVM
