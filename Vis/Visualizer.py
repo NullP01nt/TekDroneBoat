@@ -145,7 +145,7 @@ class Path:
         for i in range(0,len(self.__controlPoints)-1):
             a=self.__controlPoints[i]
             b=self.__controlPoints[i+1]
-            dist = calculateSignedDistance(a,b,point)
+            dist = signedDistanceToLineSegment(a,b,point)
             print a,b,"dist=",dist
             if np.abs(dist) <= np.abs(minDist):
                 minDist = dist      
@@ -155,8 +155,10 @@ class Path:
         print "calcSignedDistToPoint", minDistLineStartPointIndex, minDistLineStartPoint, res, minDistLineStartPoint
         return res
 
-
-def calculateSignedDistance(p1, p2, p3): # x3,y3 is the point
+#calculate the signed distance to a line segment defined by p1 and p2 as 
+#endpoints.
+#left is negative and right is positive
+def signedDistanceToLineSegment(p1, p2, p3): # x3,y3 is the point
     def leftSideCheck(p1, p2, p3):
         return ((p1-p2)[0] * (p1-p3)[1] - (p1-p2)[1] * (p1-p3)[0]) > 0
 
@@ -182,7 +184,7 @@ def calculateSignedDistance(p1, p2, p3): # x3,y3 is the point
     dist = np.sqrt(dx*dx + dy*dy)
     
     if leftSideCheck(p1, p2, p3):
-        return dist
+        return dist 
     else:
         return - dist 
     
@@ -199,7 +201,7 @@ class Controller:
 
     def __call__(self):
         if self.__drone is not None and self.__path is not None:
-            return self.__ctl.update(-self.error())
+            return self.__ctl.update(self.error())
         else:
             return 0
 
@@ -218,9 +220,10 @@ figure.gca().set_aspect('equal')
 
 #make a Catmull Rom spline path
 path = Path([np.array([ 84, 200]),
-             np.array([ 67,  88]),
-             np.array([165,  22]),
-             np.array([230, 160])])
+             np.array([ 67,  88])#,
+             #np.array([165,  22]),
+             #np.array([230, 160])
+            ])
 path.setupDrawing(figure)
 
 
