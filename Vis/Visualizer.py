@@ -189,7 +189,7 @@ def signedDistanceToLineSegment(p1, p2, p3): # x3,y3 is the point
     
 import PID
 class Controller:
-    __ctl = PID.PID(P=0.001, I=0.0, D=0.0 )
+    __ctl = PID.PID(P=0.003, I=0.0, D=0.0 )
     __drone = None
     __path = None
 
@@ -217,7 +217,7 @@ figure.gca().set_aspect('equal')
 
 
 #make a Catmull Rom spline path
-path = Path([np.array([ 84, 200]),
+path = Path([np.array([100, 250]),
              np.array([ 67,  88]),
              np.array([165,  22]),
              np.array([230, 160])
@@ -242,7 +242,7 @@ def UpdateDrone():
     linear = 0 #constant speed/no acceleration
     print str(drone)+"\n"
 
-timer = figure.canvas.new_timer(interval=10)
+timer = figure.canvas.new_timer(interval=20)
 timer.add_callback(UpdateDrone)
 timer.start()
 
