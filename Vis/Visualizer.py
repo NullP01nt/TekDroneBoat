@@ -139,7 +139,7 @@ class Path:
             return(controlIndex)
 
     #Control system aux
-    def calcSignedDistToPoint(self, point):
+    def calcSignedDistToPath(self, point):
         minDist = 2**31 #a big number
         minDistLineStartPoint=None
         for i in range(0,len(self.__controlPoints)-1):
@@ -152,7 +152,7 @@ class Path:
                 minDistLineStartPoint=a
                 minDistLineStartPointIndex = i
         res = minDist*np.sign((b[0]-b[0])*(point[1]-a[1]) - (b[1]-a[1])*(point[0]-a[0]))
-        print "calcSignedDistToPoint", minDistLineStartPointIndex, minDistLineStartPoint, res, minDistLineStartPoint
+        print "calcSignedDistToPath", minDistLineStartPointIndex, minDistLineStartPoint, res, minDistLineStartPoint
         return res
 
 #calculate the signed distance to a line segment defined by p1 and p2 as 
@@ -190,10 +190,9 @@ def signedDistanceToLineSegment(p1, p2, p3): # x3,y3 is the point
     
 import PID
 class Controller:
-    __ctl = PID.PID(P=0.001, I=0, D=0.0 )
+    __ctl = PID.PID(P=0.001, I=0.0, D=0.0 )
     __drone = None
     __path = None
-    #oritance = distErr * const_0 
 
     def __init__(self, drone, path):
         self.__drone = drone
@@ -206,7 +205,7 @@ class Controller:
             return 0
 
     def error(self):
-        err = self.__path.calcSignedDistToPoint(self.__drone.getPosition())
+        err = self.__path.calcSignedDistToPath(self.__drone.getPosition())
         print "err="+str(err)
         return err  
 ################################################################################
@@ -287,8 +286,6 @@ figure.canvas.mpl_disconnect(figure.canvas.manager.key_press_handler_id)
 
 #Display the figures on screen
 plt.show(block=True)
-
-
 
 
 ################################################################################
