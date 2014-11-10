@@ -53,7 +53,7 @@ class Drone:
     
     #move the drone by curser
     def pickedUpAndMoved(self, newPosition, index):
-        print "moving a Drone"
+        #moving a Drone
         if newPosition is not None:
             self.__setPosition(newPosition)
 
@@ -145,22 +145,24 @@ class Path:
         for i in range(0,len(self.__controlPoints)-1):
             a=self.__controlPoints[i]
             b=self.__controlPoints[i+1]
-            dist = calculateDistance(a,b,point)
-            print "dist=",dist
-            if dist <= minDist:
+            dist = calculateSignedDistance(a,b,point)
+            print a,b,"dist=",dist
+            if np.abs(dist) <= np.abs(minDist):
                 minDist = dist      
                 minDistLineStartPoint=a
                 minDistLineStartPointIndex = i
         res = minDist*np.sign((b[0]-b[0])*(point[1]-a[1]) - (b[1]-a[1])*(point[0]-a[0]))
-        print "calcSignedDistToPoint", minDistLineStartPointIndex, minDistLineStartPoint, res, i, minDistLineStartPoint
+        print "calcSignedDistToPoint", minDistLineStartPointIndex, minDistLineStartPoint, res, minDistLineStartPoint
         return res
 
 
-def calculateDistance(p1, p2, p3): # x3,y3 is the point
+def calculateSignedDistance(p1, p2, p3): # x3,y3 is the point
+    def leftSideCheck(p1, p2, p3):
+        return ((p1-p2)[0] * (p1-p3)[1] - (p1-p2)[1] * (p1-p3)[0]) > 0
+
     x1,y1 = p1[0], p1[1]
     x2,y2 = p2[0], p2[1]
-    x0,y0 = p3[0], p3[1]
-    """
+    x3,y3 = p3[0], p3[1]
     px = x2-x1
     py = y2-y1
 
@@ -176,22 +178,17 @@ def calculateDistance(p1, p2, p3): # x3,y3 is the point
 
     dx = x - x3
     dy = y - y3
-
-    # Note: If the actual distance does not matter,
-    # if you only want to compare what this function
-    # returns to other results of this function, you
-    # can just return the squared distance instead
-    # (i.e. remove the sqrt) to gain a little performance
-    return np.sqrt(dx*dx + dy*dy)
-    """
-    a = (y2-y1)/(x2-x1)
-    c = y1 - a*x1
-    return (-a*x0 + y0 + c)/np.sqrt((-a)**2 + 1)
-
+    
+    dist = np.sqrt(dx*dx + dy*dy)
+    
+    if leftSideCheck(p1, p2, p3):
+        return dist
+    else:
+        return - dist 
     
 import PID
 class Controller:
-    __ctl = PID.PID(P=0.0001, I=0, D=0.0 )
+    __ctl = PID.PID(P=0.001, I=0, D=0.0 )
     __drone = None
     __path = None
     #oritance = distErr * const_0 
@@ -202,7 +199,7 @@ class Controller:
 
     def __call__(self):
         if self.__drone is not None and self.__path is not None:
-            return self.__ctl.update(self.error())
+            return self.__ctl.update(-self.error())
         else:
             return 0
 
@@ -233,19 +230,18 @@ drone.setupDrawing(figure)
 
 
 controller = Controller(drone, path)
-linear = 0#1
+linear = 1
 def UpdateDrone():
     global linear
     ctl = controller()
-    angular = min(max(ctl,-0.02*np.pi), 0.02*np.pi)
-    
+    angular = ctl # min(max(ctl,-0.02*np.pi), 0.02*np.pi)
     print "UpdateDrone", ctl, angular
     drone.kinematicsUpdate(linear, angular)
     figure.canvas.draw()
     linear = 0 #constant speed/no acceleration
     print str(drone)+"\n"
 
-timer = figure.canvas.new_timer(interval=100)
+timer = figure.canvas.new_timer(interval=10)
 timer.add_callback(UpdateDrone)
 timer.start()
 
