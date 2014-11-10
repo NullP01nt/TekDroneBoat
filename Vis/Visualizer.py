@@ -157,7 +157,6 @@ class Path:
 
 #calculate the signed distance to a line segment defined by p1 and p2 as 
 #endpoints.
-#left is negative and right is positive
 def signedDistanceToLineSegment(p1, p2, p3): # x3,y3 is the point
     def leftSideCheck(p1, p2, p3):
         return ((p1-p2)[0] * (p1-p3)[1] - (p1-p2)[1] * (p1-p3)[0]) > 0
@@ -186,7 +185,7 @@ def signedDistanceToLineSegment(p1, p2, p3): # x3,y3 is the point
     if leftSideCheck(p1, p2, p3):
         return dist 
     else:
-        return - dist 
+        return -dist 
     
 import PID
 class Controller:
@@ -219,15 +218,15 @@ figure.gca().set_aspect('equal')
 
 #make a Catmull Rom spline path
 path = Path([np.array([ 84, 200]),
-             np.array([ 67,  88])#,
-             #np.array([165,  22]),
-             #np.array([230, 160])
-            ])
+             np.array([ 67,  88]),
+             np.array([165,  22]),
+             np.array([230, 160])
+             ])
 path.setupDrawing(figure)
 
 
 #make the drone
-drone = Drone(np.array([ 31, 165]), 0)
+drone = Drone(np.array([ 100, 250]), -np.pi/2)
 drone.setupDrawing(figure)
 
 
