@@ -145,10 +145,11 @@ class Path:
             return(controlIndex)
 
     #Control system aux
+    __minDistLineStartPointIndex = 0 #Keep track of progress along path (avoid get used line segments)
     def calcSignedDistToPath(self, point):
         minDist = 2**31 #a big number
         minDistLineStartPoint=None
-        for i in range(0,len(self.__controlPoints)-1):
+        for i in range(self.__minDistLineStartPointIndex,len(self.__controlPoints)-1):
             a=self.__controlPoints[i]
             b=self.__controlPoints[i+1]
             dist = signedDistanceToLineSegment(a,b,point)
@@ -156,9 +157,9 @@ class Path:
             if np.abs(dist) <= np.abs(minDist):
                 minDist = dist      
                 minDistLineStartPoint=a
-                minDistLineStartPointIndex = i
+                self.__minDistLineStartPointIndex = i
         res = minDist*np.sign((b[0]-b[0])*(point[1]-a[1]) - (b[1]-a[1])*(point[0]-a[0]))
-        print "calcSignedDistToPath", minDistLineStartPointIndex, minDistLineStartPoint, res, minDistLineStartPoint
+        print "calcSignedDistToPath", self.__minDistLineStartPointIndex, minDistLineStartPoint, res, minDistLineStartPoint
         return res
 
 #calculate the signed distance to a line segment defined by p1 and p2 as 
@@ -195,7 +196,7 @@ def signedDistanceToLineSegment(p1, p2, p3): # x3,y3 is the point
     
 import PID
 class Controller:
-    __ctl = PID.PID(P=0.013 , I=0.0023, D=0.43  )
+    __ctl = PID.PID(P=0.013 , I=0.00225, D=0.43  )
     __drone = None
     __path = None
 
@@ -270,12 +271,14 @@ movable = None
 index = None #spline path controle point index
 
 def on_pick(event):
-    global movable,index
+    global movable,index,controller, drone
     index = path.selectControlPoint(event.artist)
     if index is not None:
         movable = path
     else:
         movable = drone
+        drone.__rotation=0
+        controller = Controller(drone, path)
 
 def motion_notify_event(event):
     global figure
