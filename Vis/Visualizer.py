@@ -1,3 +1,9 @@
+#Get the controller right: combining distance with direction
+#Get smooth path
+
+#generat path from graph (and path from image)
+#BM: split project up
+
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
@@ -189,7 +195,7 @@ def signedDistanceToLineSegment(p1, p2, p3): # x3,y3 is the point
     
 import PID
 class Controller:
-    __ctl = PID.PID(P=0.003, I=0.0, D=0.0 )
+    __ctl = PID.PID(P=0.013 , I=0.0023, D=0.43  )
     __drone = None
     __path = None
 
@@ -217,16 +223,29 @@ figure.gca().set_aspect('equal')
 
 
 #make a Catmull Rom spline path
-path = Path([np.array([100, 250]),
-             np.array([ 67,  88]),
-             np.array([165,  22]),
-             np.array([230, 160])
+path = Path([np.array([103, 225]),
+             np.array([ 99, 204]),
+             np.array([ 93, 183]),
+             np.array([ 84, 158]),
+             np.array([ 79, 129]),
+             np.array([ 84, 103]),
+             np.array([ 94,  78]),
+             np.array([111,  53]),
+             np.array([131,  42]),
+             np.array([154,  41]),
+             np.array([177,  49]),
+             np.array([194,  64]),
+             np.array([202,  82]),
+             np.array([212,  109]),
+             np.array([221, 144]),
+             np.array([224, 170]),
+             np.array([226, 191])
              ])
 path.setupDrawing(figure)
 
 
 #make the drone
-drone = Drone(np.array([ 100, 250]), -np.pi/2)
+drone = Drone(np.array([ 100, 225]), -np.pi/2)
 drone.setupDrawing(figure)
 
 
